@@ -418,6 +418,8 @@ ray_trace(void)
     image_plane_width = image_plane_height * (1.0 * framebuffer_width / framebuffer_height);
 
     // ...
+    float pixelwidth = image_plane_width / framebuffer_width;
+    float pixelheight = image_plane_height / framebuffer_height;
     // ...
     // ...
 
@@ -426,6 +428,11 @@ ray_trace(void)
     {
         for (i = 0; i < framebuffer_width; i++)
         {
+            double x_offset = -image_plane_width/2 + pixelwidth * (i + 0.5);
+            double y_offset = image_plane_height/2 - pixelheight * (j + 0.5);
+            vec3 pixel_direction = v3_create(x_offset, y_offset, 0);
+            vec3 ray_direction = v3_add(pixel_direction, scene_camera_position);
+            color = ray_color(0, scene_camera_position, ray_direction);
             // ...
             // ...
             // ...
