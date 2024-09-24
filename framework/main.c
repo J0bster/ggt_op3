@@ -36,13 +36,13 @@
 // Number of drawable pixels, i.e. x coordinates passed to PutPixel()
 // should be in the range [0, framebuffer_width[.  Analogous for y.
 // (These values must both be a power of 2)
-const int   framebuffer_width = 512;
-const int   framebuffer_height = 512;
+const int framebuffer_width = 512;
+const int framebuffer_height = 512;
 
 // Camera vertical field-of-view
 const float VFOV = 45.0;
 
-byte    *framebuffer;
+byte *framebuffer;
 
 GLuint vertBuffers[5];
 GLuint indBuffers[3];
@@ -52,40 +52,39 @@ GLuint texCoords[1];
 
 int strips = 12;
 
-int     show_raytraced=0;
-int     needs_rerender=1;
-int     show_bvh=0;
-int     draw_bvh_mode=0;
-int     show_normals=0;
-int     do_antialiasing=0;
+int show_raytraced = 0;
+int needs_rerender = 1;
+int show_bvh = 0;
+int draw_bvh_mode = 0;
+int show_normals = 0;
+int do_antialiasing = 0;
 
-float   camDistance = 6.5;
-float   camRotZ = 25.0, camAzimuth = -40.0;
-float   saved_camRotZ, saved_camAzimuth, saved_camDistance;
-int     mouse_mode = 0;
-int     mx, my;
+float camDistance = 6.5;
+float camRotZ = 25.0, camAzimuth = -40.0;
+float saved_camRotZ, saved_camAzimuth, saved_camDistance;
+int mouse_mode = 0;
+int mx, my;
 
-viewpoint   viewpoints[6] =
-{
-    { -40.0, 25.0, 6.5 },
-    { -27.5, -30.5, 2.0 },
-    { -73.8, 37.0, 3.8 },
-    {  46.2, 0.0, 6.2 },
-    { -35.0, -187.2, 2.8 },
-    { -80.3, 27.0, 1.1 },
+viewpoint viewpoints[6] =
+    {
+        {-40.0, 25.0, 6.5},
+        {-27.5, -30.5, 2.0},
+        {-73.8, 37.0, 3.8},
+        {46.2, 0.0, 6.2},
+        {-35.0, -187.2, 2.8},
+        {-80.3, 27.0, 1.1},
 };
 
 GLfloat cubeVert[24] =
-{
-    -0.5, -0.5, -0.5,
-    0.5, -0.5, -0.5,
-    0.5, 0.5, -0.5,
-    -0.5, 0.5, -0.5,
-    -0.5, -0.5, 0.5,
-    0.5, -0.5, 0.5,
-    0.5, 0.5, 0.5,
-    -0.5, 0.5, 0.5
-};
+    {
+        -0.5, -0.5, -0.5,
+        0.5, -0.5, -0.5,
+        0.5, 0.5, -0.5,
+        -0.5, 0.5, -0.5,
+        -0.5, -0.5, 0.5,
+        0.5, -0.5, 0.5,
+        0.5, 0.5, 0.5,
+        -0.5, 0.5, 0.5};
 
 GLuint cubeInd[24] = {
     0, 1,
@@ -99,27 +98,23 @@ GLuint cubeInd[24] = {
     4, 5,
     5, 6,
     6, 7,
-    7, 4
-};
+    7, 4};
 
 GLfloat quadVert[8] = {
     0.0, 1.0,
     0.0, 0.0,
     1.0, 0.0,
-    1.0, 1.0
-};
+    1.0, 1.0};
 
 GLfloat quadTex[8] = {
     0.0, 0.0,
     0.0, 1.0,
     1.0, 1.0,
-    1.0, 0.0
-};
+    1.0, 0.0};
 
 GLuint quadInd[6] = {
     0, 1, 2,
-    0, 2, 3
-};
+    0, 2, 3};
 
 /* Do not check for memory leaks when using AddressSanitizer. */
 const char *
@@ -128,8 +123,7 @@ __asan_default_options(void)
     return "detect_leaks=0";
 }
 
-void
-init_opengl(void)
+void init_opengl(void)
 {
     glewInit();
 
@@ -137,8 +131,8 @@ init_opengl(void)
     glClearColor(1, 1, 1, 0);
 
     // Setup lighting parameters.
-    GLfloat light_ambient[] = {0.4,0.4,0.4,0.0};
-    GLfloat mat_shininess[] = { 50.0 };
+    GLfloat light_ambient[] = {0.4, 0.4, 0.4, 0.0};
+    GLfloat mat_shininess[] = {50.0};
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glEnable(GL_LIGHTING);
@@ -166,9 +160,11 @@ init_opengl(void)
     GLfloat *normVert = malloc(18 * scene_num_triangles * sizeof(GLfloat));
     triangle tri;
     vec3 addNorm;
-    for (int i = 0; i < scene_num_triangles; i++) {
+    for (int i = 0; i < scene_num_triangles; i++)
+    {
         tri = scene_triangles[i];
-        for (int j = 0; j < 3; j++) {
+        for (int j = 0; j < 3; j++)
+        {
             // Triangle Vertices.
             triVert[9 * i + j * 3] = scene_vertices[tri.v[j]].x;
             triVert[9 * i + j * 3 + 1] = scene_vertices[tri.v[j]].y;
@@ -219,22 +215,22 @@ init_opengl(void)
     int vertexStart;
     sphere s;
     // All spheres are in the same buffer.
-    GLfloat *sphereVert = malloc(scene_num_spheres * (strips + 1) * strips * 3
-                                 * sizeof(GLfloat));
-    GLfloat *sphereNorm = malloc(scene_num_spheres * (strips + 1) * strips * 3
-                                 * sizeof(GLfloat));
-    GLuint *sphereInd = malloc(scene_num_spheres * strips * strips * 6
-                               * sizeof(GLuint));
-    for (int n = 0; n < scene_num_spheres; n++) {
+    GLfloat *sphereVert = malloc(scene_num_spheres * (strips + 1) * strips * 3 * sizeof(GLfloat));
+    GLfloat *sphereNorm = malloc(scene_num_spheres * (strips + 1) * strips * 3 * sizeof(GLfloat));
+    GLuint *sphereInd = malloc(scene_num_spheres * strips * strips * 6 * sizeof(GLuint));
+    for (int n = 0; n < scene_num_spheres; n++)
+    {
         s = scene_spheres[n];
         // Determine array starting points for this sphere.
         vertNormOffset = n * (strips + 1) * strips * 3;
         indOffset = n * strips * strips * 6;
         vertIndex = n * (strips + 1) * strips;
-        for (int i = 0; i <= strips; i++) {
+        for (int i = 0; i <= strips; i++)
+        {
             phi = i * (M_PI / strips);
             vertexStart = vertNormOffset + i * strips * 3;
-            for (int j = 0; j < strips; j++) {
+            for (int j = 0; j < strips; j++)
+            {
                 theta = j * (2 * M_PI / strips);
                 // Calculate vertex position.
                 sphereVert[vertexStart] = s.radius * cos(theta) * sin(phi) + s.center.x;
@@ -250,12 +246,13 @@ init_opengl(void)
                 // Create the indices for the various triangles.
                 // 2 triangles per new vertex, one to the next vertex and one
                 // to the previous vertex.
-                if (i > 0) {
+                if (i > 0)
+                {
                     arrayIndex = indOffset + (i - 1) * strips * 6 + j * 6;
                     // C doesn't do modulo right with negative numbers,
                     // so + strips is used.
                     sphereInd[arrayIndex] = vertIndex + i * strips +
-                                           (j - 1 + strips) % strips;
+                                            (j - 1 + strips) % strips;
                     sphereInd[arrayIndex + 1] = vertIndex + i * strips + j;
                     sphereInd[arrayIndex + 2] = vertIndex + (i - 1) * strips + j;
                     sphereInd[arrayIndex + 3] = vertIndex + i * strips + j;
@@ -301,7 +298,7 @@ init_opengl(void)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLuint), quadInd, GL_STATIC_DRAW);
 
     // Allocate a framebuffer, to be filled during ray tracing
-    framebuffer = (byte*) malloc(framebuffer_width*framebuffer_height*3);
+    framebuffer = (byte *)malloc(framebuffer_width * framebuffer_height * 3);
 
     glBindTexture(GL_TEXTURE_2D, texBuffers[0]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, framebuffer_width, framebuffer_height,
@@ -320,8 +317,7 @@ init_opengl(void)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void
-resize(int w, int h)
+void resize(int w, int h)
 {
     if (h == 0)
         h = 1;
@@ -329,13 +325,12 @@ resize(int w, int h)
     glViewport(0, 0, w, h);
 }
 
-void
-put_pixel(int x, int y, float r, float g, float b)
+void put_pixel(int x, int y, float r, float g, float b)
 {
     if (x < 0 || y < 0 || x >= framebuffer_width || y >= framebuffer_height)
     {
         printf("put_pixel(): x, y coordinates (%d, %d) outside of visible area!\n",
-                x, y);
+               x, y);
         return;
     }
 
@@ -343,17 +338,16 @@ put_pixel(int x, int y, float r, float g, float b)
     // with the R, G and B values one after the each, e.g
     // RGBRGBRGB...
 
-    framebuffer[3*(framebuffer_width*y+x)] = (int)(255*r);
-    framebuffer[3*(framebuffer_width*y+x)+1] = (int)(255*g);
-    framebuffer[3*(framebuffer_width*y+x)+2] = (int)(255*b);
+    framebuffer[3 * (framebuffer_width * y + x)] = (int)(255 * r);
+    framebuffer[3 * (framebuffer_width * y + x) + 1] = (int)(255 * g);
+    framebuffer[3 * (framebuffer_width * y + x) + 2] = (int)(255 * b);
 }
 
-void
-setup_camera(void)
+void setup_camera(void)
 {
-    float	cx, cy, cz;
-    float	t;
-    float 	beta, gamma;
+    float cx, cy, cz;
+    float t;
+    float beta, gamma;
 
     // degrees -> radians
     beta = camAzimuth / 180.0 * M_PI;
@@ -365,14 +359,14 @@ setup_camera(void)
     // Rotate around Y
     t = cx;
     cx = cx * cos(beta) + cz * sin(beta);
-	// cy remains unchanged
+    // cy remains unchanged
     cz = -t * sin(beta) + cz * cos(beta);
 
     // Rotate around Z
     t = cx;
     cx = cx * cos(gamma) - cy * sin(gamma);
     cy = t * sin(gamma) + cy * cos(gamma);
-	// cz remains unchanged
+    // cz remains unchanged
 
     scene_camera_position.x = cx;
     scene_camera_position.y = cy;
@@ -384,20 +378,19 @@ setup_camera(void)
 
     // Assumes matrix mode is model-view
     glLoadIdentity();
-    gluLookAt (cx, cy, cz,  0.0, 0.0, 0.5,  0.0, 0.0, 1.0);
+    gluLookAt(cx, cy, cz, 0.0, 0.0, 0.5, 0.0, 0.0, 1.0);
 }
 
-void
-ray_trace(void)
+void ray_trace(void)
 {
-    vec3    forward_vector, right_vector, up_vector;
-    int     i, j;
-    float   image_plane_width, image_plane_height;
-    vec3    color;
-    char    buf[128];
+    vec3 forward_vector, right_vector, up_vector;
+    int i, j;
+    float image_plane_width, image_plane_height;
+    vec3 color;
+    char buf[128];
 
-    struct timeval  t0, t1;
-    float           time_taken;
+    struct timeval t0, t1;
+    float time_taken;
 
     fprintf(stderr, "Ray tracing ...");
     gettimeofday(&t0, NULL);
@@ -414,34 +407,36 @@ ray_trace(void)
     // Compute size of image plane from the chosen field-of-view
     // and image aspect ratio. This is the size of the plane at distance
     // of one unit from the camera position.
-    image_plane_height = 2.0 * tan(0.5*VFOV/180*M_PI);
+    image_plane_height = 2.0 * tan(0.5 * VFOV / 180 * M_PI);
     image_plane_width = image_plane_height * (1.0 * framebuffer_width / framebuffer_height);
 
-    // ...
-    float pixelwidth = image_plane_width / framebuffer_width;
-    float pixelheight = image_plane_height / framebuffer_height;
-    // ...
-    // ...
+
+    float r = image_plane_width / 2;
+    float l = -r;
+    float t = image_plane_height / 2;
+    float b = -t;
+    int nx = framebuffer_width;
+    int ny = framebuffer_height;
+    float us, vs;
 
     // Loop over all pixels in the framebuffer
     for (j = 0; j < framebuffer_height; j++)
     {
         for (i = 0; i < framebuffer_width; i++)
         {
-            double x_offset = -image_plane_width/2 + pixelwidth * (i + 0.5);
-            double y_offset = image_plane_height/2 - pixelheight * (j + 0.5);
-            vec3 pixel_direction = v3_create(x_offset, y_offset, 0);
-            vec3 ray_direction = v3_add(pixel_direction, scene_camera_position);
-            color = ray_color(0, scene_camera_position, ray_direction);
-            // ...
-            // ...
-            // ...
+            us = l + (r - l) * ((i + .5) / nx);
+            vs = b + (t - b) * ((j + .5) / ny);
+            vec3 direction = v3_create(us, vs, -1);
+            direction = v3_normalize(direction);
+
+            vec3 s = v3_add(v3_add(v3_multiply(right_vector, us), v3_multiply(up_vector, vs)), forward_vector);
+            color = ray_color(0, scene_camera_position, s);
 
             // Output pixel color
             put_pixel(i, j, color.x, color.y, color.z);
         }
 
-        sprintf(buf, "Ray-tracing ::: %.0f%% done", 100.0*j/framebuffer_height);
+        sprintf(buf, "Ray-tracing ::: %.0f%% done", 100.0 * j / framebuffer_height);
         glutSetWindowTitle(buf);
     }
 
@@ -455,24 +450,24 @@ ray_trace(void)
 
     fprintf(stderr, " done in %.1f seconds\n", time_taken);
     fprintf(stderr, "... %lld total rays shot, of which %d camera rays and "
-            "%lld shadow rays\n", num_rays_shot,
-            do_antialiasing ? 4*framebuffer_width*framebuffer_height :
-                              framebuffer_width*framebuffer_height,
+                    "%lld shadow rays\n",
+            num_rays_shot,
+            do_antialiasing ? 4 * framebuffer_width * framebuffer_height : framebuffer_width * framebuffer_height,
             num_shadow_rays_shot);
     fprintf(stderr, "... %lld triangles intersection tested "
-            "(avg %.1f tri/ray)\n",
-        num_triangles_tested, 1.0*num_triangles_tested/num_rays_shot);
+                    "(avg %.1f tri/ray)\n",
+            num_triangles_tested, 1.0 * num_triangles_tested / num_rays_shot);
     fprintf(stderr, "... %lld bboxes intersection tested (avg %.1f bbox/ray)\n",
-        num_bboxes_tested, 1.0*num_bboxes_tested/num_rays_shot);
+            num_bboxes_tested, 1.0 * num_bboxes_tested / num_rays_shot);
 }
 
 // Draw the node bboxes of the BVH, for inner nodes at a certain
 // level in the tree
 
 static void
-draw_bvh_inner_nodes(int level, bvh_node* node)
+draw_bvh_inner_nodes(int level, bvh_node *node)
 {
-    vec3    center, size;
+    vec3 center, size;
 
     if (node->is_leaf)
         return;
@@ -494,17 +489,17 @@ draw_bvh_inner_nodes(int level, bvh_node* node)
     }
     else
     {
-        draw_bvh_inner_nodes(level+1, node->u.inner.left_child);
-        draw_bvh_inner_nodes(level+1, node->u.inner.right_child);
+        draw_bvh_inner_nodes(level + 1, node->u.inner.left_child);
+        draw_bvh_inner_nodes(level + 1, node->u.inner.right_child);
     }
 }
 
 // Draw leaf node bounding boxes
 
 static void
-draw_bvh_leaf_nodes(bvh_node* node)
+draw_bvh_leaf_nodes(bvh_node *node)
 {
-    vec3    center, size;
+    vec3 center, size;
 
     if (node->is_leaf)
     {
@@ -528,8 +523,7 @@ draw_bvh_leaf_nodes(bvh_node* node)
     }
 }
 
-void
-draw_scene(void)
+void draw_scene(void)
 {
     // clear the draw buffer
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -539,7 +533,7 @@ draw_scene(void)
         if (needs_rerender)
         {
             // clear the framebuffer
-            memset(framebuffer, 255, 3*framebuffer_width*framebuffer_height);
+            memset(framebuffer, 255, 3 * framebuffer_width * framebuffer_height);
 
             // trace a new picture
             ray_trace();
@@ -593,12 +587,12 @@ draw_scene(void)
     {
         // Draw scene using OpenGL
 
-        //glutSetWindowTitle("OpenGL view");
+        // glutSetWindowTitle("OpenGL view");
 
         glMatrixMode(GL_PROJECTION);
 
         glLoadIdentity();
-        gluPerspective(VFOV, 1.0*framebuffer_width/framebuffer_height, 0.1, 1000.0);
+        gluPerspective(VFOV, 1.0 * framebuffer_width / framebuffer_height, 0.1, 1000.0);
 
         glMatrixMode(GL_MODELVIEW);
 
@@ -637,13 +631,13 @@ draw_scene(void)
             glLightfv(GL_LIGHT0 + l, GL_DIFFUSE, v);
         }
 
-        GLfloat one[] = { 1.0, 1.0, 1.0, 1.0 };
-        GLfloat zero[] = { 0.0, 0.0, 0.0, 1.0 };
+        GLfloat one[] = {1.0, 1.0, 1.0, 1.0};
+        GLfloat zero[] = {0.0, 0.0, 0.0, 1.0};
 
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, zero);
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, zero);
         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, one);
-		// Draw the triangles in the scene with vertices and normals.
+        // Draw the triangles in the scene with vertices and normals.
         glBindBuffer(GL_ARRAY_BUFFER, vertBuffers[1]);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -677,7 +671,7 @@ draw_scene(void)
             glEnable(GL_LIGHTING);
         }
 
-		// Draw the spheres in the scene
+        // Draw the spheres in the scene
 
         glPushMatrix();
 
@@ -725,8 +719,7 @@ draw_scene(void)
     glutSwapBuffers();
 }
 
-void
-save_image(void)
+void save_image(void)
 {
     FILE *f;
 
@@ -738,7 +731,7 @@ save_image(void)
     }
 
     fprintf(f, "P3\n# Raytraced image\n%d %d\n255\n", framebuffer_width, framebuffer_height);
-    for (int i = 0; i < 3*framebuffer_width*framebuffer_height; i++)
+    for (int i = 0; i < 3 * framebuffer_width * framebuffer_height; i++)
         fprintf(f, "%d\n", framebuffer[i]);
 
     printf("Image saved to image.ppm\n");
@@ -746,115 +739,113 @@ save_image(void)
     fclose(f);
 }
 
-void
-key_pressed(unsigned char key, int x, int y)
+void key_pressed(unsigned char key, int x, int y)
 {
     switch (key)
     {
-        case 'r':
-        {
-            // Toggle between OpenGL and ray-traced output
-            show_raytraced = 1 - show_raytraced;
-            if (show_raytraced)
-                glutSetWindowTitle("Ray-tracing [ray-traced output]");
-            else
-                glutSetWindowTitle("Ray-tracing [OpenGL view]");
-            glutPostRedisplay();
-            break;
-        }
-        case 'a':
-        {
-            // Toggle anti-aliasing (forces immediate re-render)
-            do_antialiasing = 1 - do_antialiasing;
-            needs_rerender = 1;
-            glutPostRedisplay();
-            break;
-        }
-        case 'b':
-        {
-            // Toggle use of the BVH for intersection testing
-            // (forces immediate re-render)
-            use_bvh = 1 - use_bvh;
-            printf("use_bvh set to %d\n", use_bvh);
-            needs_rerender = 1;
-            glutPostRedisplay();
-            break;
-        }
-        case 'B':
-        {
-            // Show BVH nodes
-            show_bvh = 1 - show_bvh;
-            if (show_bvh)
-                draw_bvh_mode = 0;
-            glutPostRedisplay();
-            break;
-        }
-        case ']':
-        {
-            draw_bvh_mode++;
-            glutPostRedisplay();
-            break;
-        }
-        case '[':
-        {
-            draw_bvh_mode--;
-            if (draw_bvh_mode < 0)
-                draw_bvh_mode = 0;
-            glutPostRedisplay();
-            break;
-        }
-        case 'n':
-        {
-            // Show vertex normals
-            show_normals = 1 - show_normals;
-            glutPostRedisplay();
-            break;
-        }
-        case 'c':
-        {
-            // Dump camera parameters
-            printf("azimuth = %.1f, rot_z = %.1f, distance = %.1f\n",
-                camAzimuth, camRotZ, camDistance);
-            break;
+    case 'r':
+    {
+        // Toggle between OpenGL and ray-traced output
+        show_raytraced = 1 - show_raytraced;
+        if (show_raytraced)
+            glutSetWindowTitle("Ray-tracing [ray-traced output]");
+        else
+            glutSetWindowTitle("Ray-tracing [OpenGL view]");
+        glutPostRedisplay();
+        break;
+    }
+    case 'a':
+    {
+        // Toggle anti-aliasing (forces immediate re-render)
+        do_antialiasing = 1 - do_antialiasing;
+        needs_rerender = 1;
+        glutPostRedisplay();
+        break;
+    }
+    case 'b':
+    {
+        // Toggle use of the BVH for intersection testing
+        // (forces immediate re-render)
+        use_bvh = 1 - use_bvh;
+        printf("use_bvh set to %d\n", use_bvh);
+        needs_rerender = 1;
+        glutPostRedisplay();
+        break;
+    }
+    case 'B':
+    {
+        // Show BVH nodes
+        show_bvh = 1 - show_bvh;
+        if (show_bvh)
+            draw_bvh_mode = 0;
+        glutPostRedisplay();
+        break;
+    }
+    case ']':
+    {
+        draw_bvh_mode++;
+        glutPostRedisplay();
+        break;
+    }
+    case '[':
+    {
+        draw_bvh_mode--;
+        if (draw_bvh_mode < 0)
+            draw_bvh_mode = 0;
+        glutPostRedisplay();
+        break;
+    }
+    case 'n':
+    {
+        // Show vertex normals
+        show_normals = 1 - show_normals;
+        glutPostRedisplay();
+        break;
+    }
+    case 'c':
+    {
+        // Dump camera parameters
+        printf("azimuth = %.1f, rot_z = %.1f, distance = %.1f\n",
+               camAzimuth, camRotZ, camDistance);
+        break;
+    }
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    {
+        // Switch to a predefined viewpoint
+        int idx = (int)(key - '1');
+        camAzimuth = viewpoints[idx].azimuth;
+        camRotZ = viewpoints[idx].rot_z;
+        camDistance = viewpoints[idx].distance;
 
-        }
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        {
-            // Switch to a predefined viewpoint
-            int idx = (int)(key - '1');
-            camAzimuth = viewpoints[idx].azimuth;
-            camRotZ = viewpoints[idx].rot_z;
-            camDistance = viewpoints[idx].distance;
+        // Switch to OpenGL viewing
+        show_raytraced = 0;
 
-            // Switch to OpenGL viewing
-            show_raytraced = 0;
+        // And since the camera params changed we need to rerender
+        needs_rerender = 1;
 
-            // And since the camera params changed we need to rerender
-            needs_rerender = 1;
+        glutPostRedisplay();
 
-            glutPostRedisplay();
-
-            break;
-        }
-        case 's':
-        {
-            // Save rendered image to (ascii) .ppm file 'image.ppm'
-            save_image();
-            break;
-        }
-        case 'm':
-        {
-            // Display mouse coordinates (for debugging only)
-            printf("x = %d, y = %d\n", x, y);
-            break;
-        }
-        case 'q':
-            exit(0);
+        break;
+    }
+    case 's':
+    {
+        // Save rendered image to (ascii) .ppm file 'image.ppm'
+        save_image();
+        break;
+    }
+    case 'm':
+    {
+        // Display mouse coordinates (for debugging only)
+        printf("x = %d, y = %d\n", x, y);
+        break;
+    }
+    case 'q':
+        exit(0);
     }
 }
 
@@ -893,7 +884,6 @@ mouse_func(int button, int state, int x, int y)
         // pressed button released
         mouse_mode = 0;
     }
-
 }
 
 static void
@@ -933,9 +923,7 @@ motion_func(int x, int y)
     }
 }
 
-
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
 
@@ -955,12 +943,12 @@ main(int argc, char **argv)
     glutDisplayFunc(&draw_scene);
     glutIdleFunc(&draw_scene);
     glutReshapeFunc(&resize);
-    //glutSpecialFunc(&specialKeyPressed);
+    // glutSpecialFunc(&specialKeyPressed);
     glutKeyboardFunc(&key_pressed);
     glutMouseFunc(&mouse_func);
     glutMotionFunc(&motion_func);
 
-	read_scene(argv[1]);
+    read_scene(argv[1]);
 
     init_opengl();
     init_noise();
