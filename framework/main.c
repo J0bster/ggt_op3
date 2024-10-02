@@ -410,7 +410,6 @@ void ray_trace(void)
     image_plane_height = 2.0 * tan(0.5 * VFOV / 180 * M_PI);
     image_plane_width = image_plane_height * (1.0 * framebuffer_width / framebuffer_height);
 
-
     float r = image_plane_width / 2;
     float l = -r;
     float t = image_plane_height / 2;
@@ -418,22 +417,40 @@ void ray_trace(void)
     int nx = framebuffer_width;
     int ny = framebuffer_height;
     float us, vs;
-
     // Loop over all pixels in the framebuffer
     for (j = 0; j < framebuffer_height; j++)
     {
         for (i = 0; i < framebuffer_width; i++)
         {
-            us = l + (r - l) * ((i + .5) / nx);
-            vs = b + (t - b) * ((j + .5) / ny);
-            vec3 direction = v3_create(us, vs, -1);
-            direction = v3_normalize(direction);
+            if (!do_antialiasing)
+            {
+                us = l + (r - l) * ((i + .5) / nx);
+                vs = b + (t - b) * ((j + .5) / ny);
 
-            vec3 s = v3_add(v3_add(v3_multiply(right_vector, us), v3_multiply(up_vector, vs)), forward_vector);
-            color = ray_color(0, scene_camera_position, s);
+                vec3 s = v3_add(v3_add(v3_multiply(right_vector, us), v3_multiply(up_vector, vs)), forward_vector);
+                color = ray_color(0, scene_camera_position, s);
 
-            // Output pixel color
-            put_pixel(i, j, color.x, color.y, color.z);
+                // Output pixel color
+                put_pixel(i, j, color.x, color.y, color.z);
+                continue;
+            }
+
+            vec3 total_color = v3_create(.0, .0, .0);
+            // loop over sub pixels
+            for (float sub_j = .25; sub_j < 1; sub_j += .5)
+            {
+                for (float sub_i = .25; sub_i < 1; sub_i += .5)
+                {
+                    us = l + (r - l) * ((i + sub_j) / nx);
+                    vs = b + (t - b) * ((j + sub_i) / ny);
+
+                    vec3 s = v3_add(v3_add(v3_multiply(right_vector, us), v3_multiply(up_vector, vs)), forward_vector);
+                    color = ray_color(0, scene_camera_position, s);
+                    // 4 sub pixels so we can add quarter of each sub pixel.
+                    total_color = v3_add(total_color, v3_multiply(color, .25));
+                }
+                put_pixel(i, j, total_color.x, total_color.y, total_color.z);
+            }
         }
 
         sprintf(buf, "Ray-tracing ::: %.0f%% done", 100.0 * j / framebuffer_height);
