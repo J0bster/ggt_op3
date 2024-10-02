@@ -207,7 +207,7 @@ find_first_intersected_bvh_triangle(intersection_point* ip,
             n = inner_node_right_child(n);
         }
         if (hit_left && hit_right) {
-            if((t_max_left + t_min_left) * 0.5 - ray_origin.z < (t_max_right + t_min_right) * 0.5 - ray_origin.z) {
+            if((t_max_left + t_min_left) * 0.5 - ray_origin < (t_max_right + t_min_right) * 0.5 - ray_origin) {
                 n = inner_node_left_child(n);
             }
             else {
