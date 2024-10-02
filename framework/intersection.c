@@ -179,6 +179,56 @@ static int
 find_first_intersected_bvh_triangle(intersection_point* ip,
     vec3 ray_origin, vec3 ray_direction)
 {
+    float t_min, t_max;
+    bvh_node *n = bvh_root;
+    float t0 = 0.0;
+    float t1 = C_INFINITY;
+
+    if (!bbox_intersect(&t_min, &t_max, n->bbox, ray_origin, ray_direction, t0, t1)) 
+    {
+        return 0;
+    }
+
+    
+    float t_min_left, t_max_left;
+    float t_min_right, t_max_right;
+    int hit_left, hit_right;
+    while(n->is_leaf != 1) {
+        hit_left = bbox_intersect(&t_min_left, &t_max_left, inner_node_left_child(n)->bbox, ray_origin, ray_direction, t0, t1);
+        hit_right = bbox_intersect(&t_min_right, &t_max_right, inner_node_right_child(n)->bbox, ray_origin, ray_direction, t0, t1);
+
+        if (!hit_left && !hit_right) {
+            return 0;
+        }
+        if (hit_left && !hit_right) {
+            n = inner_node_left_child(n);
+        }
+        if (!hit_left && hit_right) {
+            n = inner_node_right_child(n);
+        }
+        if (hit_left && hit_right) {
+            if((t_max_left + t_min_left) * 0.5 - ray_origin.z < (t_max_right + t_min_right) * 0.5 - ray_origin.z) {
+                n = inner_node_left_child(n);
+            }
+            else {
+                n = inner_node_right_child(n);
+            }
+        }
+    }
+    
+    ip->t = C_INFINITY;
+    intersection_point cur_ip;
+    int hit = 0;
+    for(int i = 0; i < leaf_node_num_triangles(n); i++) {
+        if (ray_intersects_triangle(&cur_ip, leaf_node_triangles(n)[i], ray_origin, ray_direction)) {
+            if (cur_ip.t < ip->t) {
+                *ip = cur_ip;
+                hit = 1;
+            }
+        }
+    }
+
+    if (hit == 1) return 1;
     return 0;
 }
 

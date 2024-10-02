@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "bvh.h": "c",
+        "v3math.h": "c",
+        "stdlib.h": "c"
+    }
+}
