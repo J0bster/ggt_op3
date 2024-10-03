@@ -1,11 +1,11 @@
 /* Computer Graphics and Game Technology, Assignment Ray-tracing
  *
- * Student name ....
- * Student email ...
- * Collegekaart ....
- * Date ............
- * Comments ........
- *
+ * Student name Job Stouthart & Mees Kerssens
+ * Student email 13999788@uva.nl & 13465953@uva.nl
+ * Collegekaart 13999788 & 13465953
+ * Date 03/10/2024
+ * Comments:
+ * BVH implemented.
  *
  * (always fill in these fields before submitting!!)
  */
@@ -183,6 +183,7 @@ static int traverse_bvh(intersection_point* ip, const bvh_node* n, vec3 ray_orig
         intersection_point cur_ip;
         int hit = 0;
 
+        // Check every triangle in the leaf node and update the intersection point if we find a closer one.
         for (int i = 0; i < leaf_node_num_triangles(n); i++) {
             if (ray_intersects_triangle(&cur_ip, leaf_node_triangles(n)[i], ray_origin, ray_direction)) {
                 if (cur_ip.t < ip->t) {
@@ -191,7 +192,7 @@ static int traverse_bvh(intersection_point* ip, const bvh_node* n, vec3 ray_orig
                 }
             }
         }
-        return hit; // Return whether any intersection was found
+        return hit;
     }
 
     // Inner node so we check them both.
@@ -200,6 +201,7 @@ static int traverse_bvh(intersection_point* ip, const bvh_node* n, vec3 ray_orig
     int hit_left = bbox_intersect(&t_min_left, &t_max_left, inner_node_left_child(n)->bbox, ray_origin, ray_direction, t0, t1);
     int hit_right = bbox_intersect(&t_min_right, &t_max_right, inner_node_right_child(n)->bbox, ray_origin, ray_direction, t0, t1);
 
+    // If we don't hit either child, we don't hit the node.
     if (!hit_left && !hit_right) {
         return 0;
     }

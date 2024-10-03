@@ -1,13 +1,13 @@
 /* Computer Graphics and Game Technology, Assignment Ray-tracing
  *
- * Student name Job Stouthart
- * Student email ...
- * Collegekaart ....
- * Date ............
- * Comments ........
+ * Student name Job Stouthart & Mees Kerssens
+ * Student email 13999788@uva.nl & 13465953@uva.nl
+ * Collegekaart 13999788 & 13465953
+ * Date 03/10/2024
+ * Comments:
+ *  - We implemented the ray tracing algorithm and anti-aliasing in the ray_trace function.
  *
  *
- * (always fill in these fields before submitting!!)
  */
 
 #include <sys/time.h>
@@ -427,6 +427,7 @@ void ray_trace(void)
                 us = l + (r - l) * ((i + .5) / nx);
                 vs = b + (t - b) * ((j + .5) / ny);
 
+                // Calculate the ray direction
                 vec3 s = v3_add(v3_add(v3_multiply(right_vector, us), v3_multiply(up_vector, vs)), forward_vector);
                 color = ray_color(0, scene_camera_position, s);
 
@@ -443,7 +444,7 @@ void ray_trace(void)
                 {
                     us = l + (r - l) * ((i + sub_j) / nx);
                     vs = b + (t - b) * ((j + sub_i) / ny);
-
+                    // Calculate the ray direction
                     vec3 s = v3_add(v3_add(v3_multiply(right_vector, us), v3_multiply(up_vector, vs)), forward_vector);
                     color = ray_color(0, scene_camera_position, s);
                     // 4 sub pixels so we can add quarter of each sub pixel.

@@ -1,13 +1,13 @@
 /* Computer Graphics and Game Technology, Assignment Ray-tracing
  *
- * Student name ....
- * Student email ...
- * Collegekaart ....
- * Date ............
- * Comments ........
+ * Student name Job Stouthart & Mees Kerssens
+ * Student email 13999788@uva.nl & 13465953@uva.nl
+ * Collegekaart 13999788 & 13465953
+ * Date 03/10/2024
+ * Comments:
+ * All different shader algorithms have been implemented.
  *
  *
- * (always fill in these fields before submitting!!)
  */
 
 #include <math.h>
@@ -41,7 +41,6 @@ vec3 shade_matte(intersection_point ip)
   color.y += scene_ambient_light;
   color.z += scene_ambient_light;
 
-
   for (int i = 0; i < scene_num_lights; i++)
   {
     vec3 light_position = scene_lights[i].position;
@@ -51,9 +50,11 @@ vec3 shade_matte(intersection_point ip)
 
     float dot = v3_dotprod(ip.n, v3_negate(light_dir));
 
+    // Checks if light is in front of the surface
     if (dot > 0.0)
     {
       vec3 offset_p = v3_add(ip.p, v3_multiply(ip.n, offset));
+      // Checks if the light is not blocked by another object
       if (!shadow_check(offset_p, light_position))
       {
         color.x += dot * light_intensity;
@@ -89,22 +90,25 @@ vec3 shade_blinn_phong(intersection_point ip)
     vec3 light_dir = v3_normalize(v3_subtract(ip.p, light_position));
 
     float dot = v3_dotprod(ip.n, v3_negate(light_dir));
-
+    // Checks if light is in front of the surface
     if (dot > 0.0)
     {
       vec3 offset_p = v3_add(ip.p, v3_multiply(ip.n, offset));
+      // Checks if the light is not blocked by another object
       if (!shadow_check(offset_p, light_position))
       {
+        // Blinnn-Phong diffuse component
         color.x += dot * light_intensity * kd * cd.x;
         color.y += dot * light_intensity * kd * cd.y;
         color.z += dot * light_intensity * kd * cd.z;
       }
 
-      vec3 h = v3_normalize(v3_add(light_dir, ip.i));
-      float dot_hn = v3_dotprod(h, ip.n);
+      vec3 h = v3_normalize(v3_add(ip.i, light_dir));
+      float dot_hn = v3_dotprod(ip.n, v3_negate(h));
 
       if (dot_hn > 0.0)
       {
+        // Blinn-Phong specular component
         color.x += light_intensity * ks * pow(dot_hn, alpha) * cs.x;
         color.y += light_intensity * ks * pow(dot_hn, alpha) * cs.y;
         color.z += light_intensity * ks * pow(dot_hn, alpha) * cs.z;
@@ -119,6 +123,7 @@ vec3 shade_reflection(intersection_point ip)
 {
   vec3 color = v3_create(0, 0, 0);
 
+  // Calculate the reflection vector
   vec3 r = v3_subtract(v3_multiply(ip.n, 2 * v3_dotprod(ip.n, ip.i)), ip.i);
 
   vec3 r_offset = v3_add(ip.p, v3_multiply(ip.n, 0.0001));
